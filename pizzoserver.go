@@ -31,24 +31,7 @@ type cobramento struct {
 
 var incidents []string
 
-var llocs = []lloc{
-	lloc{"Bar Cendrassi", 30},
-	lloc{"Fira Dawsecondo", 20},
-	lloc{"Serveis Putoprofe", 50},
-	lloc{"Regals Noaprovare", 10},
-	lloc{"SuperMercat Carbonara", 25},
-	lloc{"Pizzes Puttanesca", 12},
-	lloc{"Colmado Ramone", 5},
-	lloc{"Supermercat Caprese", 30},
-	lloc{"Bar Pesto Rosso", 30},
-	lloc{"Tasca Bolognesa", 12},
-	lloc{"Caruso, S.L.", 10},
-	lloc{"Bar Tonnata", 20},
-	lloc{"Colmado Parmigiano", 25},
-	lloc{"Peperoni e amicci", 18},
-	lloc{"La casa di Pomodoro", 20},
-	lloc{"Il Ragu napoletano", 25},
-}
+var llocs []lloc
 
 var cobradors = []string{"Rocco", "Enzo", "Tonino", "Fredo"}
 
@@ -81,6 +64,28 @@ func readLines(path string) (lines []string, err error) {
 	return
 }
 
+// Converteix el fitxer de llocs i quantitats a cobrar
+// al format correcte
+func readLlocs(linies []string) (llocs []lloc, err error) {
+
+	for i, linia := range linies {
+		valors := strings.Split(linia, ",")
+
+		// Comprovar que són 2
+		if len(valors) != 2 {
+			return nil, fmt.Errorf("ERROR de format en la línia %d del fitxer de llocs: %v", i, valors)
+		}
+		// Comprovar que el segon és un número
+		aCobrar, err := strconv.Atoi(strings.TrimSpace(valors[1]))
+		if err != nil {
+			return nil, fmt.Errorf("ERROR en la línia %d del fitxer de llocs, el valor a cobrar està malament %s", i, valors[1])
+		}
+
+		llocs = append(llocs, lloc{Nom: valors[0], Pagament: aCobrar})
+	}
+	return llocs, nil
+}
+
 // Calcula si hi ha hagut algun incident. I llavors retorna
 // "CAP" si no n'hi ha hagut cap
 // Una llista d'incidents si n'hi ha hagut algun.
@@ -108,6 +113,17 @@ func main() {
 	}
 	if len(incidents) < mAXINCIDENTS {
 		fmt.Printf("En el fitxer d'incidents hi ha d'haver almenys %d incidents\n", mAXINCIDENTS)
+	}
+
+	dadesLlocs, err := readLines("llocs.txt")
+	if err != nil {
+		fmt.Println("Fitxer d'incidents no trobat")
+		return
+	}
+	llocs, err := readLlocs(dadesLlocs)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
 	}
 
 	rand.Seed(time.Now().UTC().UnixNano())
