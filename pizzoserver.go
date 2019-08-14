@@ -1,8 +1,13 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -11,7 +16,7 @@ import (
 )
 
 const pROVABILITATDEPROBLEMES int = 60
-const mAXINCIDENTS int = 2
+const mAXINCIDENTS int = 3
 
 type lloc struct {
 	Nom      string `json:"nom" xml:"nom"`
@@ -24,30 +29,7 @@ type cobramento struct {
 	Incidents []string `xml:"incidents>incident"`
 }
 
-var incidents = [...]string{
-	"Li hem trencat un braç",
-	"Ha fet falta amenaçar-lo",
-	"Hem trencat la porta",
-	"Li hem segrestat la dona",
-	"Li he matat la mascota",
-	"Se li ha hagut de tallar un dit",
-	"Hem matat el seu gat .. d'un tret",
-	"L'hem hagut d'apallissar una mica",
-	"Li hem posat un cap de cavall al llit",
-	"Se li ha trencat l'aparador",
-	"Li hem clavat la mà esquerra a una taula",
-	"Li hem clavat la mà dreta a una taula",
-	"Li he hagut d'afaitar les parts",
-	"Se li ha posat el cap en un forn",
-	"Se l'ha convençut de pagar posant-li un mitxó a la boca",
-	"Es negava a pagar fins que l'hem ruixat amb gasolina",
-	"Ha pagat amb espècies ... i després amb diners",
-	"He hagut de jugar a futbol amb el seu cap",
-	"He destrossat la porta ... en realitat totes les portes",
-	"Li hem calat foc al magatzem",
-	"Se li han donat un parell de cops de porra perquè pagués més de pressa",
-	"S'han trencat les finestres...",
-}
+var incidents []string
 
 var llocs = []lloc{
 	lloc{"Bar Cendrassi", 30},
@@ -70,12 +52,41 @@ var llocs = []lloc{
 
 var cobradors = []string{"Rocco", "Enzo", "Tonino", "Fredo"}
 
+func readLines(path string) (lines []string, err error) {
+	var (
+		file   *os.File
+		part   []byte
+		prefix bool
+	)
+	if file, err = os.Open(path); err != nil {
+		return
+	}
+	defer file.Close()
+
+	reader := bufio.NewReader(file)
+	buffer := bytes.NewBuffer(make([]byte, 0))
+	for {
+		if part, prefix, err = reader.ReadLine(); err != nil {
+			break
+		}
+		buffer.Write(part)
+		if !prefix {
+			lines = append(lines, buffer.String())
+			buffer.Reset()
+		}
+	}
+	if err == io.EOF {
+		err = nil
+	}
+	return
+}
+
 // Calcula si hi ha hagut algun incident. I llavors retorna
 // "CAP" si no n'hi ha hagut cap
 // Una llista d'incidents si n'hi ha hagut algun.
-func getIncidents() []string {
-	nousIncidents := make([]string, 1)
-	nousIncidents[0] = "CAP"
+func getIncidents(incidents []string) []string {
+
+	nousIncidents := []string{"CAP"}
 
 	hiHaIncidents := (rand.Intn(100) > pROVABILITATDEPROBLEMES)
 	if hiHaIncidents {
@@ -89,6 +100,15 @@ func getIncidents() []string {
 }
 
 func main() {
+
+	incidents, err := readLines("incidents.txt")
+	if err != nil {
+		fmt.Println("Fitxer d'incidents no trobat")
+		return
+	}
+	if len(incidents) < mAXINCIDENTS {
+		fmt.Printf("En el fitxer d'incidents hi ha d'haver almenys %d incidents\n", mAXINCIDENTS)
+	}
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -106,7 +126,7 @@ func main() {
 		resultat := new(cobramento)
 		resultat.Cobrador = cobradors[rand.Intn(len(cobradors))]
 		resultat.On = llocs[rand.Intn(len(llocs))]
-		resultat.Incidents = getIncidents()
+		resultat.Incidents = getIncidents(incidents)
 		c.XML(http.StatusOK, resultat)
 	})
 
