@@ -108,7 +108,7 @@ func main() {
 
 	incidents, err := readLines("incidents.txt")
 	if err != nil {
-		fmt.Println("Fitxer d'incidents no trobat")
+		fmt.Println("Fitxer d'incidents `incidents.txt` no trobat")
 		return
 	}
 	if len(incidents) < mAXINCIDENTS {
@@ -117,7 +117,7 @@ func main() {
 
 	dadesLlocs, err := readLines("llocs.txt")
 	if err != nil {
-		fmt.Println("Fitxer d'incidents no trobat")
+		fmt.Println("Fitxer de llocs a cobrar `llocs.txt` no trobat")
 		return
 	}
 	llocs, err := readLlocs(dadesLlocs)
